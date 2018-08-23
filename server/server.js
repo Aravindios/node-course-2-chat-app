@@ -1,3 +1,6 @@
+
+
+const Prometheus = require('prom-client')
 const path = require('path');
 const http = require('http');
 const express = require('express');
@@ -14,6 +17,23 @@ var io = socketIO(server);
 var users = new Users();
 
 app.use(express.static(publicPath));
+
+
+const metricsInterval = Prometheus.collectDefaultMetrics()
+const httpRequestDurationMicroseconds = new Prometheus.Histogram({
+  name: 'http_request_duration_ms',
+  help: 'Duration of HTTP requests in ms',
+  labelNames: ['method', 'route', 'code'],
+  buckets: [0.10, 5, 15, 50, 100, 200, 300, 400, 500]  // buckets for response time from 0.1ms to 500ms
+})
+
+
+// Metrics endpoint
+ app.get('/metrics', (req, res) => {
+  res.set('Content-Type', Prometheus.register.contentType)
+  res.end(Prometheus.register.metrics())
+})
+
 
 io.on('connection', (socket) => {
   console.log('New user connected');
