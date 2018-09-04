@@ -34,6 +34,14 @@ const httpRequestDurationMicroseconds = new Prometheus.Histogram({
   res.end(Prometheus.register.metrics())
 })
 
+# APIHighMedianResponseTime
+ALERT APIHighMedianResponseTime
+  IF histogram_quantile(0.5, sum(rate(http_request_duration_ms_bucket[1m])) by (le, service, route, method)) > 100
+  FOR 60s
+  ANNOTATIONS {
+    summary = "High median response time on {{ $labels.service }} and {{ $labels.method }} {{ $labels.route }}",
+    description = "{{ $labels.service }}, {{ $labels.method }} {{ $labels.route }} has a median response time above 100ms (current value: {{ $value }}ms)",
+  }
 
 io.on('connection', (socket) => {
   console.log('New user connected');
